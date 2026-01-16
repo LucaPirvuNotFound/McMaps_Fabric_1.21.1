@@ -1,0 +1,39 @@
+{
+	"schemaVersion": 1,
+	"id": "mcmaps_maze",
+	"version": "${version}",
+	"name": "McMaps_Maze",
+	"description": "This is a real-time direction guide for Minecraft",
+	"authors": [
+		"Luca Pirvu",
+		"Andrei Rabu",
+		"Bogdan Maciuca"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/mcmaps_maze/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.ralubog.mcmaps_maze.McMaps_Maze"
+		],
+		"fabric-datagen": [
+			"net.ralubog.mcmaps_maze.McMaps_MazeDataGenerator"
+		],
+		"client": [
+			"net.ralubog.mcmaps_maze.McMaps_MazeClient"
+		]
+	},
+	"mixins": [
+		"mcmaps_maze.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
