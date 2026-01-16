@@ -89,9 +89,6 @@ public class Road_Manager {
     private static double water_cost = 5.0;
 
     public static double heuristic(BlockPos p1, BlockPos p2) {
-        // AI FOLOSIT: Math.sqrt + Math.pow (Euclidean distance).
-        // In Python codul tau folosea Manhattan distance (abs + abs).
-        // Pentru Minecraft, Euclidean e ok, dar e mai lenta din cauza sqrt.
         return Math.sqrt(Math.pow((p1.getX() - p2.getX()), 2) + Math.pow((p1.getY() - p2.getY()), 2) + Math.pow((p1.getZ() - p2.getZ()), 2));
     }
 
@@ -101,7 +98,6 @@ public class Road_Manager {
 
         double base_penalty, slope_penalty, water_penalty;
 
-        // GRESALA TA: neighbour.getY() in loc de neighbour.getZ() la a doua verificare
         if (current.getX() != neighbour.getX() && current.getZ() != neighbour.getZ()) {
             base_penalty = 1.414;
         } else {
@@ -142,7 +138,7 @@ public class Road_Manager {
 
                 BlockPos pos = new BlockPos(x, surfaceY - 1, z); // Scadem 1 pentru a fi pe bloc, nu deasupra
 
-                // Initializam g_score cu infinit, asa cum ai facut in Python
+                // Initializam g_score cu infinit, presupunem la inceput ca nu poti ajunge de la un bloc la niciun alt bloc
                 surfaceMap.put(pos, Double.POSITIVE_INFINITY);
             }
         }
@@ -201,8 +197,9 @@ public class Road_Manager {
 
     // Functie auxiliara pentru a gasi BlockPos-ul corect in Map dupa X si Z
     private static BlockPos findNeighborInMap(Map<BlockPos, Double> map, int x, int z) {
-        // Aceasta parte poate fi lenta daca map-ul e urias.
-        // O solutie mai buna ar fi sa stochezi map-ul ca Map<Long, Double> unde cheia e BlockPos.asLong()
+        // Aceasta parte e putin shit
+        // TODO:
+        // O solutie mai buna ar fi sa stochez map-ul ca Map<Long, Double> unde cheia e BlockPos.asLong()
         for (BlockPos pos : map.keySet()) {
             if (pos.getX() == x && pos.getZ() == z) {
                 return pos;
