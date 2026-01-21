@@ -31,7 +31,7 @@ public class McMaps_Maze implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
-		Create_Particle.register(); // Add this line
+		Create_Particle.register();
 		Create_Particle_Array.register();
 		Hide_Particle_Array.register();
 		registerTickEvent(); // This keeps the particles "alive"

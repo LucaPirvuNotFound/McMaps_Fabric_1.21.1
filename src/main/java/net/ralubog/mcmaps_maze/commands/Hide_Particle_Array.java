@@ -11,7 +11,10 @@ public class Hide_Particle_Array {
             dispatcher.register(CommandManager.literal("hide_road")
                     .executes(context -> {
                         Road_Manager.isVisible = false;
-                        context.getSource().sendFeedback(() -> Text.literal("Road display DISABLED"), false);
+                        // Readucem blocurile la starea initiala
+                        Road_Manager.return_to_original_state(context.getSource().getWorld());
+
+                        context.getSource().sendFeedback(() -> Text.literal("Road display DISABLED and terrain restored"), false);
                         return 1;
                     }));
         });
