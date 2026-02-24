@@ -24,7 +24,8 @@
 			"net.ralubog.mcmaps_maze.McMaps_MazeDataGenerator"
 		],
 		"client": [
-			"net.ralubog.mcmaps_maze.McMaps_MazeClient"
+			"net.ralubog.mcmaps_maze.McMaps_MazeClient",
+			"net.ralubog.mcmaps_maze.client.ClientMenuInit"
 		]
 	},
 	"mixins": [
