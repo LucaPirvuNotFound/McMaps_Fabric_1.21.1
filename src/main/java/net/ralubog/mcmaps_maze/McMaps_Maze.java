@@ -1,30 +1,27 @@
 package net.ralubog.mcmaps_maze;
 
-import com.jcraft.jorbis.Block;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.ralubog.mcmaps_maze.commands.*;
 import net.ralubog.mcmaps_maze.commands.utils.Road_Manager;
+import net.ralubog.mcmaps_maze.item.ModItems;
+import net.ralubog.mcmaps_maze.item.custom.RoadWandItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Console;
 import java.util.List;
-import java.util.Map;
-
-
-
-
-
-
-
-
 
 
 public class McMaps_Maze implements ModInitializer {
@@ -41,6 +38,10 @@ public class McMaps_Maze implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
+		// PENTRU ITEME CUSTOM
+		ModItems.registerModItems();
+
+		//------------------------------------------
 		MapManager.loadLevels();
 		Create_Particle.register();
 		GenerateMenu.register();
@@ -55,6 +56,17 @@ public class McMaps_Maze implements ModInitializer {
 		Create_Particle_Array.register();
 		Hide_Particle_Array.register();
 		registerTickEvent(); // This keeps the particles "alive"
+
+		// Inside your Mod Initializer
+		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
+			if (player.getStackInHand(hand).getItem() instanceof RoadWandItem && world.isClient) {
+				RoadWandItem.startPos = pos;
+				player.sendMessage(Text.literal("Start Point Set: " + pos.toShortString()).formatted(Formatting.GOLD), true);
+				world.playSound(player, pos, SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), SoundCategory.PLAYERS, 1.0f, 1.0f);
+				return ActionResult.SUCCESS;
+			}
+			return ActionResult.PASS;
+		});
 	}
 
 	private void registerTickEvent() {

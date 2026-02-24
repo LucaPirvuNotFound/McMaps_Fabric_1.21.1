@@ -12,6 +12,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.ralubog.mcmaps_maze.commands.utils.Road_Manager;
+import net.ralubog.mcmaps_maze.item.custom.RoadWandItem;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,6 +97,13 @@ public class Create_Particle_Array {
 
         source.sendFeedback(() -> Text.literal("Calcul inceput pentru: " + algorithms.toString()), false);
 
+        if (stop == null && RoadWandItem.endPos != null) {
+            stop = RoadWandItem.endPos;
+        }
+        if (start == null && RoadWandItem.startPos != null) {
+            start = RoadWandItem.startPos;
+        }
+
         // --- sectiunea unde afisez o mica legenda despre culorile folosite pentru realtime
         if (realtime) {
             source.sendFeedback(() -> Text.literal("--- LEGENDA VIZUALIZARE ---").formatted(Formatting.GRAY), false);
@@ -119,6 +127,7 @@ public class Create_Particle_Array {
                 }
             }
         }
+
         // -----------------------------------------------
 
         Road_Manager.reset_waypoints();

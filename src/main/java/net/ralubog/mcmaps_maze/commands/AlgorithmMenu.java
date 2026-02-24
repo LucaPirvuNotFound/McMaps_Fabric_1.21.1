@@ -26,7 +26,7 @@ public class AlgorithmMenu {
                         // Creates: [RESULT] [STEPS] and then [RESET] below it
                         java.util.function.Function<String, Text> createButtons = (algoCode) -> Text.empty()
                                 // 1. Result and Steps Buttons
-                                .append(Text.literal("\n\n[RESULT]  ")
+                                .append(Text.literal("\n\n[RESULT] ")
                                         .setStyle(Style.EMPTY.withColor(Formatting.DARK_GREEN).withBold(true)
                                                 .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/run_algo " + algoCode + " false"))
                                                 .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Jump to Solution")))))
