@@ -139,7 +139,7 @@ public class Road_Manager {
         base_penalty *= base_cost;
 
         // slope cost
-        slope_penalty = Math.abs(h_neigh - h_current) > 1 ? Double.POSITIVE_INFINITY : Math.abs(h_neigh - h_current) * slope_cost;
+        slope_penalty = -(h_neigh - h_current) > 1 ? Double.POSITIVE_INFINITY : Math.abs(h_neigh - h_current) * slope_cost;
 
         // water cost
         BlockState state = world.getBlockState(neighbour);
@@ -184,6 +184,8 @@ public class Road_Manager {
         PriorityQueue<NodeScore> openSet = new PriorityQueue<>(Comparator.comparingDouble(NodeScore::fScore));
 
         Map<BlockPos, BlockPos> came_from = new HashMap<>();
+
+        // Will addd next part
 
         // Setam punctul de start
         // Presupunem ca start-ul a fost deja pus in g_score cu 0.0 in functia de scanare
@@ -358,7 +360,7 @@ public class Road_Manager {
             // Create a copy of keys or iterate directly.
             // Since we don't add/remove keys from 'grid', iterating keySet is safe.
             // We convert to list to avoid ConcurrentModification if logic were to change,
-            // but effectively we just need to iterate all nodes.
+            // but effectively we just need to iterate all nodes
             List<BlockPos> currentNodes = new ArrayList<>(grid.keySet());
 
             for (BlockPos current : currentNodes) {

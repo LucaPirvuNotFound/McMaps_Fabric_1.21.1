@@ -1,0 +1,6 @@
+{
+  "item.mcmaps_maze.road_wand" : "Road Wand",
+  "tooltip.mcmaps_maze.road_wand.left": "§6Shift-Right-Click:§r Set Start Point",
+  "tooltip.mcmaps_maze.road_wand.right": "§bRight-Click:§r Set End Point",
+  "tooltip.mcmaps_maze.road_wand.middle": "§eScroll Click:§r Clear Selection"
+}

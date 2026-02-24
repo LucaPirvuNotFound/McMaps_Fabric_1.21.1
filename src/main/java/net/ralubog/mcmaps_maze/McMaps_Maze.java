@@ -1,24 +1,28 @@
 package net.ralubog.mcmaps_maze;
 
-import com.jcraft.jorbis.Block;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
-import net.ralubog.mcmaps_maze.commands.Create_Particle;
-import net.ralubog.mcmaps_maze.commands.Create_Particle_Array;
+import net.ralubog.mcmaps_maze.commands.*;
 import net.ralubog.mcmaps_maze.commands.utils.Road_Manager;
-import net.ralubog.mcmaps_maze.commands.Hide_Particle_Array;
+import net.ralubog.mcmaps_maze.item.ModItems;
+import net.ralubog.mcmaps_maze.item.custom.RoadWandItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Console;
 import java.util.List;
-import java.util.Map;
 
 public class McMaps_Maze implements ModInitializer {
 	public static final String MOD_ID = "mcmaps_maze";
@@ -33,10 +37,26 @@ public class McMaps_Maze implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
+
+		// PENTRU ITEME CUSTOM
+		ModItems.registerModItems();
+
+		//------------------------------------------
+		MapManager.loadLevels();
 		Create_Particle.register();
+		GenerateMenu.register();
+		RunAlgorithm.register();
+		AlgorithmMenu.register();
+		Lesson1Graphs.register();
+		VisualizeGraph.register();
+		ExerciseLesson1.register();
+		MapDesigner.register();
+
+		GeneratePlatform.register();
 		Create_Particle_Array.register();
 		Hide_Particle_Array.register();
 		registerTickEvent(); // This keeps the particles "alive"
+
 	}
 
 	private void registerTickEvent() {
