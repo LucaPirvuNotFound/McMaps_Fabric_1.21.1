@@ -7,10 +7,11 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.ralubog.mcmaps_maze.McMaps_Maze;
+import net.ralubog.mcmaps_maze.item.custom.RoadWandItem;
 
 public class ModItems {
     // ROAD_WAND (main tool)
-    public static final Item ROAD_WAND = registerItem("road_wand", new Item(new Item.Settings()));
+    public static final Item ROAD_WAND = registerItem("road_wand", new RoadWandItem(new Item.Settings()));
 
 
     private static Item registerItem(String name, Item item) {

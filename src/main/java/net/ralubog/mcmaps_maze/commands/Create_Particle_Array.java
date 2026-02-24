@@ -23,39 +23,95 @@ import java.util.concurrent.CompletableFuture;
 public class Create_Particle_Array {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-                // În Create_Particle_Array.register()
-                dispatcher.register(CommandManager.literal("display_road")
-                        .then(CommandManager.argument("destination", BlockPosArgumentType.blockPos())
-                                .then(CommandManager.argument("option", StringArgumentType.word())
-                                        .then(CommandManager.argument("realtime", BoolArgumentType.bool()) // Argument nou
-                                                .executes(context -> {
-                                                    List<String> algos = new ArrayList<>();
-                                                    algos.add("astar");
-                                                    return executePathfindingAsync(context.getSource(),
-                                                            BlockPosArgumentType.getBlockPos(context, "destination"),
-                                                            StringArgumentType.getString(context, "option"),
-                                                            BoolArgumentType.getBool(context, "realtime"), algos);
-                                                })
-                                                // Varianta cu argumentul de algoritmi
-                                                .then(CommandManager.argument("algorithms", StringArgumentType.word())
-                                                        .executes(context -> {
-                                                            String algoArg = StringArgumentType.getString(context, "algorithms");
-                                                            List<String> algos = processAlgorithms(algoArg);
 
-                                                            if (algos.isEmpty()) {
-                                                                context.getSource().sendError(Text.literal("Algoritm invalid! Folositi: -astar, -dijkstra, -bellman_ford, -greedy sau -all"));
-                                                                return 0;
-                                                            }
+            // =================================================================================
+            // COMMAND 1: /display_road <destination> ...
+            // Uses Player Position -> Specified Destination Argument
+            // =================================================================================
+            dispatcher.register(CommandManager.literal("display_road")
+                    .then(CommandManager.argument("destination", BlockPosArgumentType.blockPos())
+                            .then(CommandManager.argument("option", StringArgumentType.word())
+                                    .then(CommandManager.argument("realtime", BoolArgumentType.bool())
+                                            // Default: A* only
+                                            .executes(context -> {
+                                                BlockPos playerPos = context.getSource().getPlayer().getBlockPos();
+                                                BlockPos destPos = BlockPosArgumentType.getBlockPos(context, "destination");
+                                                List<String> algos = new ArrayList<>();
+                                                algos.add("astar");
 
-                                                            return executePathfindingAsync(context.getSource(),
-                                                                    BlockPosArgumentType.getBlockPos(context, "destination"),
-                                                                    StringArgumentType.getString(context, "option"),
-                                                                    BoolArgumentType.getBool(context, "realtime"), algos);
-                                                        }))
-                                        )
-                                )
-                        )
-                );
+                                                return runPathfinding(context.getSource(), playerPos, destPos,
+                                                        StringArgumentType.getString(context, "option"),
+                                                        BoolArgumentType.getBool(context, "realtime"), algos);
+                                            })
+                                            // Custom Algorithms
+                                            .then(CommandManager.argument("algorithms", StringArgumentType.word())
+                                                    .executes(context -> {
+                                                        BlockPos playerPos = context.getSource().getPlayer().getBlockPos();
+                                                        BlockPos destPos = BlockPosArgumentType.getBlockPos(context, "destination");
+
+                                                        String algoArg = StringArgumentType.getString(context, "algorithms");
+                                                        List<String> algos = processAlgorithms(algoArg);
+
+                                                        if (algos.isEmpty()) {
+                                                            context.getSource().sendError(Text.literal("Invalid algorithm! Use: -astar, -dijkstra, -bellman_ford, -greedy or -all"));
+                                                            return 0;
+                                                        }
+
+                                                        return runPathfinding(context.getSource(), playerPos, destPos,
+                                                                StringArgumentType.getString(context, "option"),
+                                                                BoolArgumentType.getBool(context, "realtime"), algos);
+                                                    }))
+                                    )
+                            )
+                    )
+            );
+
+            // =================================================================================
+            // COMMAND 2: /find_path ...
+            // Uses Road Wand Start -> Road Wand End
+            // =================================================================================
+            dispatcher.register(CommandManager.literal("find_path")
+                    .then(CommandManager.argument("option", StringArgumentType.word())
+                            .then(CommandManager.argument("realtime", BoolArgumentType.bool())
+                                    // Default: A* only
+                                    .executes(context -> {
+                                        // Validate Wand Coordinates
+                                        if (RoadWandItem.startPos == null || RoadWandItem.endPos == null) {
+                                            context.getSource().sendError(Text.literal("Error: You must select both a Start and End point using the Road Wand first!").formatted(Formatting.RED));
+                                            return 0;
+                                        }
+
+                                        List<String> algos = new ArrayList<>();
+                                        algos.add("astar");
+
+                                        return runPathfinding(context.getSource(), RoadWandItem.startPos, RoadWandItem.endPos,
+                                                StringArgumentType.getString(context, "option"),
+                                                BoolArgumentType.getBool(context, "realtime"), algos);
+                                    })
+                                    // Custom Algorithms
+                                    .then(CommandManager.argument("algorithms", StringArgumentType.word())
+                                            .executes(context -> {
+                                                // Validate Wand Coordinates
+                                                if (RoadWandItem.startPos == null || RoadWandItem.endPos == null) {
+                                                    context.getSource().sendError(Text.literal("Error: You must select both a Start and End point using the Road Wand first!").formatted(Formatting.RED));
+                                                    return 0;
+                                                }
+
+                                                String algoArg = StringArgumentType.getString(context, "algorithms");
+                                                List<String> algos = processAlgorithms(algoArg);
+
+                                                if (algos.isEmpty()) {
+                                                    context.getSource().sendError(Text.literal("Invalid algorithm! Use: -astar, -dijkstra, -bellman_ford, -greedy or -all"));
+                                                    return 0;
+                                                }
+
+                                                return runPathfinding(context.getSource(), RoadWandItem.startPos, RoadWandItem.endPos,
+                                                        StringArgumentType.getString(context, "option"),
+                                                        BoolArgumentType.getBool(context, "realtime"), algos);
+                                            }))
+                            )
+                    )
+            );
         });
     }
 
@@ -88,64 +144,55 @@ public class Create_Particle_Array {
         return result;
     }
 
-    private static int executePathfindingAsync(ServerCommandSource source, BlockPos stop, String option, boolean realtime, List<String> algorithms) {
+    // Renamed to runPathfinding and cleaned up to accept explicit Start/Stop coordinates
+    private static int runPathfinding(ServerCommandSource source, BlockPos start, BlockPos stop, String option, boolean realtime, List<String> algorithms) {
         if (source.getPlayer() == null) return 0;
 
-        BlockPos start = source.getPlayer().getBlockPos();
+        source.sendFeedback(() -> Text.literal("Calculation started for: " + algorithms.toString()), false);
+
         ServerWorld world = source.getWorld();
+
+        // Ensure coordinates are valid (snap to surface if needed)
         final BlockPos final_stop = correct_height(world, stop);
+        final BlockPos final_start = start; // Start is usually ground level if player/wand selected correctly
 
-        source.sendFeedback(() -> Text.literal("Calcul inceput pentru: " + algorithms.toString()), false);
-
-        if (stop == null && RoadWandItem.endPos != null) {
-            stop = RoadWandItem.endPos;
-        }
-        if (start == null && RoadWandItem.startPos != null) {
-            start = RoadWandItem.startPos;
-        }
-
-        // --- sectiunea unde afisez o mica legenda despre culorile folosite pentru realtime
+        // --- Visualization Legend ---
         if (realtime) {
-            source.sendFeedback(() -> Text.literal("--- LEGENDA VIZUALIZARE ---").formatted(Formatting.GRAY), false);
+            source.sendFeedback(() -> Text.literal("--- VISUALIZATION LEGEND ---").formatted(Formatting.GRAY), false);
             for (String algo : algorithms) {
                 switch (algo) {
                     case "astar" -> source.sendFeedback(() ->
-                            Text.literal("Astar: Baza-").append(Text.literal("Rosu").formatted(Formatting.RED))
-                                    .append(Text.literal("; Curent-").append(Text.literal("Galben").formatted(Formatting.YELLOW))), false);
+                            Text.literal("Astar: Base-").append(Text.literal("Red").formatted(Formatting.RED))
+                                    .append(Text.literal("; Current-").append(Text.literal("Yellow").formatted(Formatting.YELLOW))), false);
 
                     case "dijkstra" -> source.sendFeedback(() ->
-                            Text.literal("Dijkstra: Baza-").append(Text.literal("Negru").formatted(Formatting.BLACK))
-                                    .append(Text.literal("; Curent-").append(Text.literal("Alb").formatted(Formatting.WHITE))), false);
+                            Text.literal("Dijkstra: Base-").append(Text.literal("Black").formatted(Formatting.BLACK))
+                                    .append(Text.literal("; Current-").append(Text.literal("White").formatted(Formatting.WHITE))), false);
 
                     case "bellman_ford" -> source.sendFeedback(() ->
-                            Text.literal("Bellman_Ford: Baza-").append(Text.literal("Albastru").formatted(Formatting.BLUE))
-                                    .append(Text.literal("; Curent-").append(Text.literal("Bleu").formatted(Formatting.AQUA))), false);
+                            Text.literal("Bellman_Ford: Base-").append(Text.literal("Blue").formatted(Formatting.BLUE))
+                                    .append(Text.literal("; Current-").append(Text.literal("Aqua").formatted(Formatting.AQUA))), false);
 
                     case "greedy" -> source.sendFeedback(() ->
-                            Text.literal("Greedy: Baza-").append(Text.literal("Mov").formatted(Formatting.DARK_PURPLE))
-                                    .append(Text.literal("; Curent-").append(Text.literal("Roz").formatted(Formatting.LIGHT_PURPLE))), false);
+                            Text.literal("Greedy: Base-").append(Text.literal("Purple").formatted(Formatting.DARK_PURPLE))
+                                    .append(Text.literal("; Current-").append(Text.literal("Pink").formatted(Formatting.LIGHT_PURPLE))), false);
                 }
             }
         }
 
-        // -----------------------------------------------
-
         Road_Manager.reset_waypoints();
 
-        // Pornim calculul pe un alt thread
+        // Run calculation on a separate thread
         CompletableFuture.runAsync(() -> {
             try {
-                // Actualizam setarile in functie de optiune
                 Road_Manager.updateCosts(option);
 
-                // Executam scanarea
-                Map<BlockPos, Double> baseMap = Road_Manager.scanSurface(world, start, (int) (Road_Manager.heuristic(start, final_stop) * 1.30));
+                // Scan surface
+                Map<BlockPos, Double> baseMap = Road_Manager.scanSurface(world, final_start, (int) (Road_Manager.heuristic(final_start, final_stop) * 1.30));
 
                 for (String algo : algorithms) {
                     CompletableFuture.runAsync(() -> {
                         try {
-                            // Facem o copie a hartii pentru ca algoritmii modifica valorile din map
-                            // Daca nu facem copie, thread-urile se vor calca pe picioare
                             Map<BlockPos, Double> algoMap = new HashMap<>(baseMap);
 
                             Road_Manager.reset_block_counter();
@@ -153,32 +200,31 @@ public class Create_Particle_Array {
                             long start_time = System.nanoTime();
                             double cost = 0;
                             boolean success = false;
-                            String culoare = "necunoscut"; //nu ar trebui sa ramana asa ever
+                            String colorName = "unknown";
                             Formatting format = Formatting.WHITE;
 
-                            // Selectam algoritmul
                             switch (algo) {
                                 case "astar" -> {
-                                    cost = Road_Manager.astar(start, final_stop, algoMap, world, realtime);
+                                    cost = Road_Manager.astar(final_start, final_stop, algoMap, world, realtime);
                                     success = !Road_Manager.WAYPOINTS_ASTAR.isEmpty();
-                                    culoare = "verde";
+                                    colorName = "green";
                                     format = Formatting.GREEN;
                                 }
                                 case "dijkstra" -> {
-                                    cost = Road_Manager.dijkstra(start, final_stop, algoMap, world, realtime);
+                                    cost = Road_Manager.dijkstra(final_start, final_stop, algoMap, world, realtime);
                                     success = !Road_Manager.WAYPOINTS_DIJKSTRA.isEmpty();
-                                    culoare = "alb";
+                                    colorName = "white";
                                 }
                                 case "bellman_ford" -> {
-                                    cost = Road_Manager.bellman_ford(start, final_stop, algoMap, world, realtime);
+                                    cost = Road_Manager.bellman_ford(final_start, final_stop, algoMap, world, realtime);
                                     success = !Road_Manager.WAYPOINTS_BELLMAN_FORD.isEmpty();
-                                    culoare = "mov";
+                                    colorName = "purple";
                                     format = Formatting.LIGHT_PURPLE;
                                 }
                                 case "greedy" -> {
-                                    cost = Road_Manager.greedy(start, final_stop, algoMap, world, realtime);
+                                    cost = Road_Manager.greedy(final_start, final_stop, algoMap, world, realtime);
                                     success = !Road_Manager.WAYPOINTS_GREEDY.isEmpty();
-                                    culoare = "negru";
+                                    colorName = "black";
                                     format = Formatting.BLACK;
                                 }
                             }
@@ -186,40 +232,39 @@ public class Create_Particle_Array {
                             double duration = (System.nanoTime() - start_time) / 1_000_000_000.0;
                             final double finalCost = cost;
                             final boolean finalSuccess = success;
-                            final String finalCuloare = culoare;
+                            final String finalColor = colorName;
                             final Formatting finalFormat = format;
 
-                            // Afisarea rezultatelor pe thread-ul principal
+                            // Display results on main server thread
                             source.getServer().execute(() -> {
-                                source.sendFeedback(() -> Text.literal(" "), false); // Spatiu gol intre algoritmi
-                                source.sendFeedback(() -> Text.literal("--- REZULTATE [" + algo.toUpperCase() + "] ---").formatted(Formatting.GOLD), false);
+                                source.sendFeedback(() -> Text.literal(" "), false);
+                                source.sendFeedback(() -> Text.literal("--- RESULTS [" + algo.toUpperCase() + "] ---").formatted(Formatting.GOLD), false);
 
                                 if (!finalSuccess) {
-                                    source.sendError(Text.literal("Nu a fost gasit niciun drum cu " + algo));
+                                    source.sendError(Text.literal("No path found with " + algo));
                                 } else {
-
                                     Road_Manager.isVisible = true;
-                                    source.sendFeedback(() -> Text.literal("Drum calculat cu succes! [" + algo.toUpperCase() + "]").formatted(Formatting.GREEN), false);
-                                    source.sendFeedback(() -> Text.literal("Costul drumului: " + String.format("%.2f", finalCost)), false);
-                                    // Nota: nr_blocks este static volatil, daca ruleaza simultan numarul poate fi putin imprecis
-                                    source.sendFeedback(() -> Text.literal("Noduri vizitate (aprox): " + Road_Manager.getNr_blocks(algo)), false);
-                                    source.sendFeedback(() -> Text.literal("Timp executie: " + String.format("%.4f", duration) + " secunde"), false);
-                                    source.sendFeedback(() -> Text.literal("CULOAREA DRUMULUI: ").append(finalCuloare).formatted(finalFormat), false);
+                                    source.sendFeedback(() -> Text.literal("Path calculated successfully! [" + algo.toUpperCase() + "]").formatted(Formatting.GREEN), false);
+                                    source.sendFeedback(() -> Text.literal("Path cost: " + String.format("%.2f", finalCost)), false);
+                                    source.sendFeedback(() -> Text.literal("Visited nodes (approx): " + Road_Manager.getNr_blocks(algo)), false);
+                                    source.sendFeedback(() -> Text.literal("Execution time: " + String.format("%.4f", duration) + " seconds"), false);
+                                    source.sendFeedback(() -> Text.literal("PATH COLOR: ").append(finalColor).formatted(finalFormat), false);
                                 }
                             });
 
                         } catch (Exception e) {
-                            source.getServer().execute(() -> source.sendError(Text.literal("Eroare la " + algo + ": " + e.getMessage())));
+                            source.getServer().execute(() -> source.sendError(Text.literal("Error at " + algo + ": " + e.getMessage())));
                         }
                     });
                 }
             } catch (Exception e) {
-                source.getServer().execute(() -> source.sendError(Text.literal("Eroare la calcularea drumului: " + e.getMessage())));
+                source.getServer().execute(() -> source.sendError(Text.literal("Error calculating path: " + e.getMessage())));
             }
         });
 
         return 1;
     }
+
     private static BlockPos correct_height(ServerWorld world, BlockPos pos) {
         int x = pos.getX();
         int z = pos.getZ();

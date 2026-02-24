@@ -4,6 +4,7 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.server.world.ServerWorld;
@@ -22,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-
 
 public class McMaps_Maze implements ModInitializer {
 	public static final String MOD_ID = "mcmaps_maze";
@@ -57,16 +57,6 @@ public class McMaps_Maze implements ModInitializer {
 		Hide_Particle_Array.register();
 		registerTickEvent(); // This keeps the particles "alive"
 
-		// Inside your Mod Initializer
-		AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-			if (player.getStackInHand(hand).getItem() instanceof RoadWandItem && world.isClient) {
-				RoadWandItem.startPos = pos;
-				player.sendMessage(Text.literal("Start Point Set: " + pos.toShortString()).formatted(Formatting.GOLD), true);
-				world.playSound(player, pos, SoundEvents.BLOCK_NOTE_BLOCK_BIT.value(), SoundCategory.PLAYERS, 1.0f, 1.0f);
-				return ActionResult.SUCCESS;
-			}
-			return ActionResult.PASS;
-		});
 	}
 
 	private void registerTickEvent() {
