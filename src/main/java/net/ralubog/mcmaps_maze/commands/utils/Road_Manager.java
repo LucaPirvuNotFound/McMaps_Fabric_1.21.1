@@ -18,7 +18,7 @@ record NodeScore(double fScore, BlockPos pos) {}
 
 public class Road_Manager {
     public static volatile boolean isVisible = false;
-    private static final List<Pair<BlockPos, BlockState>> originalBlocks = Collections.synchronizedList(new ArrayList<>());
+    public static final List<Pair<BlockPos, BlockState>> originalBlocks = Collections.synchronizedList(new ArrayList<>());
 
     public static List<BlockPos> WAYPOINTS_ASTAR = Collections.synchronizedList(new ArrayList<>());
     public static List<BlockPos> WAYPOINTS_DIJKSTRA = Collections.synchronizedList(new ArrayList<>());
@@ -208,7 +208,7 @@ public class Road_Manager {
                     if (final_lastCurrent != null && world.getBlockState(final_lastCurrent).isOf(Blocks.YELLOW_CONCRETE)) {
                         world.setBlockState(final_lastCurrent, Blocks.RED_CONCRETE.getDefaultState());
                     }
-
+ 
                     BlockState currentState = world.getBlockState(current);
                     // Save state if it's not ANY visualization block
                     if (!isVisualizationBlock(currentState)) {

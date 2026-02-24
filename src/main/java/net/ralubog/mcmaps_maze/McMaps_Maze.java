@@ -50,7 +50,7 @@ public class McMaps_Maze implements ModInitializer {
 		VisualizeGraph.register();
 		ExerciseLesson1.register();
 		MapDesigner.register();
-
+		AlgoDebugCommand.register();
 		GeneratePlatform.register();
 		Create_Particle_Array.register();
 		Hide_Particle_Array.register();
