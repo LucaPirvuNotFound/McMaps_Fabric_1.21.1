@@ -43,7 +43,6 @@ public class McMaps_Maze implements ModInitializer {
 
 		//------------------------------------------
 		MapManager.loadLevels();
-		Create_Particle.register();
 		GenerateMenu.register();
 		RunAlgorithm.register();
 		AlgorithmMenu.register();
