@@ -15,6 +15,7 @@ import net.minecraft.world.Heightmap;
 import net.ralubog.mcmaps_maze.commands.utils.AlgoDebugger;
 import net.ralubog.mcmaps_maze.commands.utils.Manual_Road_Manager;
 import net.ralubog.mcmaps_maze.commands.utils.Road_Manager;
+import net.ralubog.mcmaps_maze.item.custom.RoadWandItem;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,65 +46,26 @@ public class AlgoDebugCommand {
                                     return 0;
                                 }
 
+                                // --- USE ROAD WAND COORDINATES ---
+                                if (RoadWandItem.startPos == null || RoadWandItem.endPos == null) {
+                                    context.getSource().sendError(Text.literal("Error: You must select both a Start and End point using the Road Wand first!").formatted(Formatting.RED));
+                                    return 0;
+                                }
+
                                 ServerWorld world = context.getSource().getWorld();
-                                BlockPos playerPos = player.getBlockPos();
 
-                                BlockPos detectedStart = null;
-                                BlockPos detectedGoal = null;
+                                // Snap coordinates to the surface using your friend's height logic
+                                final BlockPos start = correctHeight(world, RoadWandItem.startPos);
+                                final BlockPos goal = correctHeight(world, RoadWandItem.endPos);
 
-                                BlockPos mapStart = playerPos;
-                                int mapSize = 30;
-
-                                for (int dx = 0; dx <= mapSize; dx++) {
-                                    for (int dz = 0; dz <= mapSize; dz++) {
-                                        int px = mapStart.getX() + dx;
-                                        int pz = mapStart.getZ() + dz;
-
-                                        int py = world.getTopY(Heightmap.Type.WORLD_SURFACE, px, pz) - 1;
-                                        BlockPos surfacePos = new BlockPos(px, py, pz);
-
-                                        if (detectedGoal == null) {
-                                            if (world.getBlockState(surfacePos).isOf(Blocks.DIAMOND_BLOCK)) {
-                                                detectedGoal = surfacePos;
-                                            } else if (world.getBlockState(surfacePos.down()).isOf(Blocks.DIAMOND_BLOCK)) {
-                                                detectedGoal = surfacePos.down();
-                                            }
-                                        }
-
-                                        if (detectedStart == null) {
-                                            if (world.getBlockState(surfacePos).isOf(Blocks.GOLD_BLOCK)) {
-                                                detectedStart = surfacePos;
-                                            } else if (world.getBlockState(surfacePos.down()).isOf(Blocks.GOLD_BLOCK)) {
-                                                detectedStart = surfacePos.down();
-                                            }
-                                        }
-                                    }
-                                    if (detectedGoal != null && detectedStart != null) break;
-                                }
-
-                                final BlockPos start;
-                                if (detectedStart != null) {
-                                    start = detectedStart.up();
-                                    context.getSource().sendFeedback(() -> Text.literal("Start Locked: Gold Block found!").formatted(Formatting.YELLOW), false);
-                                } else {
-                                    start = playerPos;
-                                    context.getSource().sendFeedback(() -> Text.literal("Warning: No Gold Block found! Using player position.").formatted(Formatting.GOLD), false);
-                                }
-
-                                final BlockPos goal;
-                                if (detectedGoal != null) {
-                                    goal = detectedGoal;
-                                    context.getSource().sendFeedback(() -> Text.literal("Target Locked: Diamond Block found!").formatted(Formatting.AQUA), false);
-                                } else {
-                                    goal = start.add(20, 0, 20);
-                                    context.getSource().sendFeedback(() -> Text.literal("Warning: No Diamond Block found! Using default distance.").formatted(Formatting.RED), false);
-                                }
-
+                                // Clear the debugger memory
                                 AlgoDebugger.clear();
                                 context.getSource().sendFeedback(() -> Text.literal("Preparing " + algos.toString() + " for manual debug...").formatted(Formatting.GRAY), false);
 
                                 CompletableFuture.runAsync(() -> {
-                                    Map<BlockPos, Double> baseMap = Road_Manager.scanSurface(world, start, 50);
+                                    // Scan map with a generous radius from the start block
+                                    int scanRadius = (int) (Road_Manager.heuristic(start, goal) * 1.30);
+                                    Map<BlockPos, Double> baseMap = Road_Manager.scanSurface(world, start, scanRadius);
 
                                     for (String algo : algos) {
                                         AlgoDebugger.startRecording(algo);
@@ -230,7 +192,7 @@ public class AlgoDebugCommand {
                     .executes(context -> {
                         ServerWorld world = context.getSource().getWorld();
 
-                        // Clear the debugger memory and floating labels
+                        // Clear the debugger memory
                         AlgoDebugger.clear();
 
                         // Smoothly revert all blocks back to their original state
@@ -265,5 +227,19 @@ public class AlgoDebugCommand {
         }
 
         return result;
+    }
+
+    // Safety helper method from your friend's code to prevent pathfinding inside walls!
+    private static BlockPos correctHeight(ServerWorld world, BlockPos pos) {
+        int x = pos.getX();
+        int z = pos.getZ();
+
+        int surfaceY = world.getTopY(Heightmap.Type.WORLD_SURFACE, x, z) - 1;
+
+        if (pos.getY() > surfaceY) {
+            return new BlockPos(x, surfaceY, z);
+        }
+
+        return pos;
     }
 }

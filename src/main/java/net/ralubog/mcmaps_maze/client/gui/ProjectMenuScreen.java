@@ -175,8 +175,10 @@ public class ProjectMenuScreen extends Screen {
         int btnY = startY + 40;
 
         // RESULT AND RESET
+        // RESULT AND RESET
         this.addDrawableChild(ButtonWidget.builder(Text.literal("RESULT").formatted(Formatting.GREEN), btn -> {
-            sendCommand("run_algo " + selectedAlgo.id + " false");
+            // Using your friend's find_path command with default option and realtime=false
+            sendCommand("find_path default false " + selectedAlgo.id);
             this.close();
         }).dimensions(rightX, btnY, 55, 20).build());
 
